@@ -6,17 +6,16 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Random;
 
 public class P2PSender implements Runnable
 {
-	private Map<String, Long> IPList;
+	private P2P peer;
 	private DatagramSocket socket;
 	private Random timer;
-	P2PSender(Map<String, Long> IPList, DatagramSocket socket)
+	P2PSender(DatagramSocket socket, P2P peer)
 	{
-		this.IPList = IPList;
+		this.peer = peer;
 		this.socket = socket;
 		this.timer = new Random();
 	}
@@ -25,8 +24,12 @@ public class P2PSender implements Runnable
 	{
 		try
 		{
+			//gets local ip address
 			InetAddress myIP = InetAddress.getByName("localhost");
-			Iterator<String> IPs = IPList.keySet().iterator();
+			
+			//gets an iterator through the active IP adresses
+			Iterator<String> IPs = peer.getIterator();
+			//iterates through active ip adresses
 			while(IPs.hasNext())
 			{
 				String current = IPs.next();
@@ -37,18 +40,22 @@ public class P2PSender implements Runnable
 				socket.send(sendPacket);
 				System.out.println("IP sent to " + current);
 			}
+			//clears the map so that there are no active peers
+			peer.clearMap();
+			//sleeps a random amount of time from 0-30 seconds
 			Thread.sleep(timer.nextInt(30000));
 			while(true)
 			{
-				IPs = IPList.keySet().iterator();
+				//gets a new iterator though ip addresses
+				IPs = peer.getIterator();
 				while(IPs.hasNext())
 				{
 					String current = IPs.next();
-					if(IPList.get(current) >= 30000 + System.currentTimeMillis())
+					if(peer.getValue(current) >= 30000 + System.currentTimeMillis())//if peer has timed out
 					{
-						IPList.remove(current);
+						peer.removeFromMap(current);
 					}
-					else
+					else//if peer is active
 					{
 						InetAddress destIP = InetAddress.getByName(current);
 						String sentence = myIP.toString();

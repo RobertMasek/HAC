@@ -5,15 +5,14 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.util.Map;
 
 public class P2PReceiver implements Runnable
 {
-	private Map<String, Long> IPList;
+	private P2P peer;
 	private DatagramSocket socket;
-	P2PReceiver(Map<String, Long> IPList, DatagramSocket socket)
+	P2PReceiver(DatagramSocket socket, P2P peer)
 	{
-		this.IPList = IPList;
+		this.peer = peer;
 		this.socket = socket;
 	}
 	
@@ -28,18 +27,13 @@ public class P2PReceiver implements Runnable
             	// receive data from another peer
                 DatagramPacket incomingPacket = new DatagramPacket(incomingData, incomingData.length);
                 socket.receive(incomingPacket);
-                //String message = new String(incomingPacket.getData());
                 
-                //get peer's IP address
+                //get peer's IP address and output it
                 InetAddress otherIP = incomingPacket.getAddress();
-                
-                //int port = incomingPacket.getPort();
-                //System.out.println("Received IP from peer: " + message);
-                //System.out.println("Other peer IP: "+ otherIP.getHostAddress());
-                //System.out.println("Other peer port: "+ port);
+                System.out.println("IP address received from " + otherIP.toString().substring(1));
                 
                 //update the map with the correct timestamp
-                IPList.put(otherIP.toString(), new Long(System.currentTimeMillis()));
+                peer.addToMap(otherIP.toString().substring(1), new Long(System.currentTimeMillis()));
             }
 		}
 		catch (SocketException e) 
